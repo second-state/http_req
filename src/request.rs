@@ -15,7 +15,9 @@ use std::{
 #[cfg(feature = "std")]
 use std::net::{Shutdown, TcpStream};
 #[cfg(not(feature = "std"))]
-use wasmedge_wasi_socket::{Shutdown, TcpStream};
+use wasmedge_wasi_socket::TcpStream;
+#[cfg(not(feature = "std"))]
+use wasmedge_wasi_socket::WasiAddrinfo;
 
 const CR_LF: &str = "\r\n";
 const BUF_SIZE: usize = 8 * 1024;
@@ -888,12 +890,40 @@ impl<'a> Request<'a> {
     ///let response = Request::new(&uri).send(&mut writer).unwrap();
     ///```
     pub fn send<T: Write>(&self, writer: &mut T) -> Result<Response, error::Error> {
-        let host = self.inner.uri.host().unwrap_or("");
+        let mut host: String = self.inner.uri.host().unwrap_or("").to_string();
         let port = self.inner.uri.corr_port();
+
+        #[cfg(not(feature = "std"))]
+        {
+            let hints: WasiAddrinfo = WasiAddrinfo::default();
+            let mut sockaddr = Vec::new();
+            let mut sockbuff = Vec::new();
+            let mut ai_canonname = Vec::new();
+            let query = WasiAddrinfo::get_addrinfo(
+                &host,
+                &port.to_string(),
+                &hints,
+                10,
+                &mut sockaddr,
+                &mut sockbuff,
+                &mut ai_canonname,
+            )
+            .unwrap();
+            for record in query {
+                if record.ai_addrlen.ne(&0) && record.ai_family.is_v4() {
+                    host = format!(
+                        "{}.{}.{}.{}",
+                        sockbuff[0][2], sockbuff[0][3], sockbuff[0][4], sockbuff[0][5]
+                    );
+                    break;
+                }
+            }
+        }
+
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            return Err(error::Error::Tls)
+            return Err(error::Error::Tls);
         } else {
             self.inner.send(&mut stream, writer)
         }
@@ -1103,22 +1133,22 @@ mod tests {
             .unwrap();
     }
 
-    #[ignore]
-    #[test]
-    fn request_b_send_secure() {
-        let mut writer = Vec::new();
-        let uri = Uri::try_from(URI_S).unwrap();
+    // #[ignore]
+    // #[test]
+    // fn request_b_send_secure() {
+    //     let mut writer = Vec::new();
+    //     let uri = Uri::try_from(URI_S).unwrap();
 
-        let stream = TcpStream::connect((uri.host().unwrap_or(""), uri.corr_port())).unwrap();
-        let mut secure_stream = tls::Config::default()
-            .connect(uri.host().unwrap_or(""), stream)
-            .unwrap();
+    //     let stream = TcpStream::connect((uri.host().unwrap_or(""), uri.corr_port())).unwrap();
+    //     let mut secure_stream = tls::Config::default()
+    //         .connect(uri.host().unwrap_or(""), stream)
+    //         .unwrap();
 
-        RequestBuilder::new(&Uri::try_from(URI_S).unwrap())
-            .header("Connection", "Close")
-            .send(&mut secure_stream, &mut writer)
-            .unwrap();
-    }
+    //     RequestBuilder::new(&Uri::try_from(URI_S).unwrap())
+    //         .header("Connection", "Close")
+    //         .send(&mut secure_stream, &mut writer)
+    //         .unwrap();
+    // }
 
     #[test]
     fn request_b_parse_msg() {
