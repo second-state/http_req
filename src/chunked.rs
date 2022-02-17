@@ -35,11 +35,9 @@ where
                     break;
                 }
 
-                if let Ok(_) = self.reader.read_exact(&mut footer) {
-                    if footer != CR_LF {
-                        self.err = Some(error_malformed_chunked_encoding());
-                        break;
-                    }
+                if self.reader.read_exact(&mut footer).is_ok() && footer != CR_LF {
+                    self.err = Some(error_malformed_chunked_encoding());
+                    break;
                 }
 
                 self.check_end = false;
@@ -84,10 +82,7 @@ where
         }
 
         match self.err.as_ref() {
-            Some(v) => Err(Error::new(
-                v.kind(),
-                format!("wrapper by chunked: {}", v.to_string()),
-            )),
+            Some(v) => Err(Error::new(v.kind(), format!("wrapper by chunked: {}", v))),
             None => Ok(consumed),
         }
     }
@@ -129,7 +124,7 @@ where
     }
 
     fn chunk_header_avaliable(&self) -> bool {
-        self.reader.buffer().iter().find(|&&c| c == b'\n').is_some()
+        self.reader.buffer().iter().any(|&c| c == b'\n')
     }
 }
 
@@ -142,10 +137,7 @@ fn error_malformed_chunked_encoding() -> Error {
 }
 
 fn is_ascii_space(b: u8) -> bool {
-    match b {
-        b' ' | b'\t' | b'\n' | b'\r' => true,
-        _ => false,
-    }
+    matches!(b, b' ' | b'\t' | b'\n' | b'\r')
 }
 
 fn parse_hex_uint(data: Vec<u8>) -> Result<usize, &'static str> {
@@ -193,7 +185,7 @@ fn remove_chunk_extension(v: &mut Vec<u8>) {
 }
 
 fn trim_trailing_whitespace(v: &mut Vec<u8>) {
-    if v.len() == 0 {
+    if v.is_empty() {
         return;
     }
 

@@ -25,7 +25,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wasmedge_http_req"
-version = "0.8.1"
+version = "0.8.2"
 dependencies = [
  "unicase",
  "wasmedge_wasi_socket",
@@ -33,8 +33,9 @@ dependencies = [
 
 [[package]]
 name = "wasmedge_wasi_socket"
-version = "0.3.0"
-source = "git+https://github.com/second-state/wasmedge_wasi_socket.git#e7a7863f13f36d48d096d55029eb72887a86c5b8"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d186f3dd4f60a3e30d50a9a4c7059cfcc9fbb59eaa0256b1596259806ef56e46"
 dependencies = [
  "libc",
 ]

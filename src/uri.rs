@@ -231,11 +231,12 @@ impl<'a> Uri<'a> {
     pub fn resource(&self) -> &str {
         let mut result = "/";
 
-        for v in &[self.path, self.query, self.fragment] {
-            if let Some(r) = v {
-                result = &self.inner[r.start..];
-                break;
-            }
+        if let Some(v) = [self.path, self.query, self.fragment]
+            .iter()
+            .flatten()
+            .next()
+        {
+            result = &self.inner[v.start..];
         }
 
         result
@@ -263,14 +264,14 @@ impl<'a> TryFrom<&'a str> for Uri<'a> {
     type Error = Error;
 
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
-        let (scheme, mut uri_part) = get_chunks(&s, Some(RangeC::new(0, s.len())), ":");
+        let (scheme, mut uri_part) = get_chunks(s, Some(RangeC::new(0, s.len())), ":");
         let scheme = scheme.ok_or(ParseErr::UriErr)?;
 
         let mut authority = None;
 
         if let Some(u) = &uri_part {
             if s[*u].contains("//") {
-                let (auth, part) = get_chunks(&s, Some(RangeC::new(u.start + 2, u.end)), "/");
+                let (auth, part) = get_chunks(s, Some(RangeC::new(u.start + 2, u.end)), "/");
 
                 authority = if let Some(a) = auth {
                     Some(Authority::try_from(&s[a])?)
@@ -282,13 +283,13 @@ impl<'a> TryFrom<&'a str> for Uri<'a> {
             }
         }
 
-        let (mut path, uri_part) = get_chunks(&s, uri_part, "?");
+        let (mut path, uri_part) = get_chunks(s, uri_part, "?");
 
         if authority.is_some() || &s[scheme] == "file" {
             path = path.map(|p| RangeC::new(p.start - 1, p.end));
         }
 
-        let (query, fragment) = get_chunks(&s, uri_part, "#");
+        let (query, fragment) = get_chunks(s, uri_part, "#");
 
         Ok(Uri {
             inner: s,
@@ -404,8 +405,8 @@ impl<'a> TryFrom<&'a str> for Authority<'a> {
         let mut password = None;
 
         let uri_part = if s.contains('@') {
-            let (info, part) = get_chunks(&s, Some(RangeC::new(0, s.len())), "@");
-            let (name, pass) = get_chunks(&s, info, ":");
+            let (info, part) = get_chunks(s, Some(RangeC::new(0, s.len())), "@");
+            let (name, pass) = get_chunks(s, info, ":");
 
             username = name;
             password = pass;
@@ -420,7 +421,7 @@ impl<'a> TryFrom<&'a str> for Authority<'a> {
         } else {
             ":"
         };
-        let (host, port) = get_chunks(&s, uri_part, split_by);
+        let (host, port) = get_chunks(s, uri_part, split_by);
         let host = host.ok_or(ParseErr::UriErr)?;
 
         if let Some(p) = port {

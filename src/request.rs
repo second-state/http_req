@@ -12,12 +12,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[cfg(feature = "std")]
-use std::net::{Shutdown, TcpStream};
-#[cfg(not(feature = "std"))]
-use wasmedge_wasi_socket::TcpStream;
-#[cfg(not(feature = "std"))]
-use wasmedge_wasi_socket::WasiAddrinfo;
+use wasmedge_wasi_socket::{TcpStream, WasiAddrinfo};
 
 const CR_LF: &str = "\r\n";
 const BUF_SIZE: usize = 8 * 1024;
@@ -90,7 +85,7 @@ where
     let mut buf = vec![0u8; num_bytes];
 
     reader.read_exact(&mut buf)?;
-    writer.write_all(&mut buf)
+    writer.write_all(&buf)
 }
 
 ///Reads data from `reader` and checks for specified `val`ue. When data contains specified value
@@ -617,7 +612,7 @@ impl<'a> Request<'a> {
     ///let response = Request::new(&uri).send(&mut writer).unwrap();;
     ///```
     pub fn new(uri: &'a Uri) -> Request<'a> {
-        let mut builder = RequestBuilder::new(&uri);
+        let mut builder = RequestBuilder::new(uri);
         builder.header("Connection", "Close");
 
         Request {
@@ -893,37 +888,33 @@ impl<'a> Request<'a> {
         let mut host: String = self.inner.uri.host().unwrap_or("").to_string();
         let port = self.inner.uri.corr_port();
 
-        #[cfg(not(feature = "std"))]
-        {
-            let hints: WasiAddrinfo = WasiAddrinfo::default();
-            let mut sockaddr = Vec::new();
-            let mut sockbuff = Vec::new();
-            let mut ai_canonname = Vec::new();
-            let query = WasiAddrinfo::get_addrinfo(
-                &host,
-                &port.to_string(),
-                &hints,
-                10,
-                &mut sockaddr,
-                &mut sockbuff,
-                &mut ai_canonname,
-            )
-            .unwrap();
-            for record in query {
-                if record.ai_addrlen.ne(&0) && record.ai_family.is_v4() {
-                    host = format!(
-                        "{}.{}.{}.{}",
-                        sockbuff[0][2], sockbuff[0][3], sockbuff[0][4], sockbuff[0][5]
-                    );
-                    break;
-                }
+        let hints: WasiAddrinfo = WasiAddrinfo::default();
+        let mut sockaddr = Vec::new();
+        let mut sockbuff = Vec::new();
+        let mut ai_canonname = Vec::new();
+        let query = WasiAddrinfo::get_addrinfo(
+            &host,
+            &port.to_string(),
+            &hints,
+            10,
+            &mut sockaddr,
+            &mut sockbuff,
+            &mut ai_canonname,
+        )
+        .unwrap();
+        for record in query {
+            if record.ai_addrlen.ne(&0) && record.ai_family.is_v4() {
+                host = format!(
+                    "{}.{}.{}.{}",
+                    sockbuff[0][2], sockbuff[0][3], sockbuff[0][4], sockbuff[0][5]
+                );
+                break;
             }
         }
-
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            return Err(error::Error::Tls);
+            Err(error::Error::Tls)
         } else {
             self.inner.send(&mut stream, writer)
         }
@@ -1237,6 +1228,7 @@ mod tests {
         assert_eq!(request.inner.timeout, timeout);
     }
 
+    #[ignore]
     #[test]
     fn request_connect_timeout() {
         let uri = Uri::try_from(URI).unwrap();

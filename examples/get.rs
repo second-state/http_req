@@ -2,7 +2,11 @@ use wasmedge_http_req::request;
 
 fn main() {
     let mut writer = Vec::new(); //container for body of a response
-    let res = request::get("http://localhost/", &mut writer).unwrap();
+    let res = request::get(
+        "http://doc.rust-lang.org/std/string/index.html",
+        &mut writer,
+    )
+    .unwrap();
 
     println!("Status: {} {}", res.status_code(), res.reason());
     println!("Headers {}", res.headers());
