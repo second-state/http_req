@@ -1,8 +1,8 @@
-use wasmedge_http_req::{request::RequestBuilder, tls, uri::Uri};
-use std::{convert::TryFrom, net::TcpStream};
+// use std::{convert::TryFrom, net::TcpStream};
+// use wasmedge_http_req::{request::RequestBuilder, tls, uri::Uri};
 
 #[cfg(not(tls))]
-fn main(){
+fn main() {
     unimplemented!()
 }
 
