@@ -12,10 +12,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-#[cfg(feature = "std")]
-use std::net::{TcpStream};
-#[cfg(not(feature = "std"))]
-use wasmedge_wasi_socket::{TcpStream};
+#[cfg(not(target_arch = "wasm32"))]
+use std::net::TcpStream;
+#[cfg(target_arch = "wasm32")]
+use wasmedge_wasi_socket::{nslookup, TcpStream};
 
 const CR_LF: &str = "\r\n";
 const BUF_SIZE: usize = 8 * 1024;
@@ -888,12 +888,28 @@ impl<'a> Request<'a> {
     ///let response = Request::new(&uri).send(&mut writer).unwrap();
     ///```
     pub fn send<T: Write>(&self, writer: &mut T) -> Result<Response, error::Error> {
-        let host = self.inner.uri.host().unwrap_or("");
+        let host = self
+            .inner
+            .uri
+            .host()
+            .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
         let port = self.inner.uri.corr_port();
+
+        #[cfg(target_arch = "wasm32")]
+        let mut stream = {
+            let mut addrs = nslookup(host, "").map_err(|e| error::Error::IO(e))?;
+            let mut addr = addrs
+                .pop()
+                .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
+            addr.set_port(port);
+            TcpStream::connect(&addr)?
+        };
+
+        #[cfg(not(target_arch = "wasm32"))]
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            return Err(error::Error::Tls)
+            return Err(error::Error::Tls);
         } else {
             self.inner.send(&mut stream, writer)
         }
