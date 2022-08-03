@@ -1,6 +1,7 @@
 //! creating and sending HTTP requests
 use crate::{
     error,
+    sslwrapper::{get_receive, send_data},
     response::{find_slice, Headers, Response, CR_LF_2},
     uri::Uri,
 };
@@ -909,7 +910,15 @@ impl<'a> Request<'a> {
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            return Err(error::Error::Tls);
+            let buf = &self.inner.parse_msg();
+            let body = String::from_utf8_lossy(buf);
+            send_data(host, port.into(), &body);
+
+            let output = get_receive();
+            let tmp = String::from_utf8(output.rcv_vec).unwrap();
+            let mut res_vec = Vec::new();
+            let res = Response::try_from(tmp.as_bytes(), &mut res_vec).unwrap();
+            return Ok(res);
         } else {
             self.inner.send(&mut stream, writer)
         }
@@ -1119,22 +1128,22 @@ mod tests {
             .unwrap();
     }
 
-    #[ignore]
-    #[test]
-    fn request_b_send_secure() {
-        let mut writer = Vec::new();
-        let uri = Uri::try_from(URI_S).unwrap();
+    // #[ignore]
+    // #[test]
+    // fn request_b_send_secure() {
+    //     let mut writer = Vec::new();
+    //     let uri = Uri::try_from(URI_S).unwrap();
 
-        let stream = TcpStream::connect((uri.host().unwrap_or(""), uri.corr_port())).unwrap();
-        let mut secure_stream = tls::Config::default()
-            .connect(uri.host().unwrap_or(""), stream)
-            .unwrap();
+    //     let stream = TcpStream::connect((uri.host().unwrap_or(""), uri.corr_port())).unwrap();
+    //     let mut secure_stream = tls::Config::default()
+    //         .connect(uri.host().unwrap_or(""), stream)
+    //         .unwrap();
 
-        RequestBuilder::new(&Uri::try_from(URI_S).unwrap())
-            .header("Connection", "Close")
-            .send(&mut secure_stream, &mut writer)
-            .unwrap();
-    }
+    //     RequestBuilder::new(&Uri::try_from(URI_S).unwrap())
+    //         .header("Connection", "Close")
+    //         .send(&mut secure_stream, &mut writer)
+    //         .unwrap();
+    // }
 
     #[test]
     fn request_b_parse_msg() {
