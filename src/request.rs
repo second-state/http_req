@@ -1,8 +1,8 @@
 //! creating and sending HTTP requests
 use crate::{
     error,
-    sslwrapper::{get_receive, send_data},
     response::{find_slice, Headers, Response, CR_LF_2},
+    sslwrapper::{get_receive, send_data},
     uri::Uri,
 };
 use std::{
@@ -916,8 +916,7 @@ impl<'a> Request<'a> {
 
             let output = get_receive();
             let tmp = String::from_utf8(output.rcv_vec).unwrap();
-            let mut res_vec = Vec::new();
-            let res = Response::try_from(tmp.as_bytes(), &mut res_vec).unwrap();
+            let res = Response::try_from(tmp.as_bytes(), writer).unwrap();
             return Ok(res);
         } else {
             self.inner.send(&mut stream, writer)
