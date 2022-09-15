@@ -177,6 +177,13 @@ impl Response {
         self.headers()
             .get("Content-Length")
             .and_then(|len| len.parse().ok())
+            .or_else(|| {
+                if self.status.code.0 == 204 {
+                    Some(0)
+                } else {
+                    None
+                }
+            })
     }
 }
 
