@@ -2,9 +2,10 @@
 use crate::{
     error,
     response::{find_slice, Headers, Response, CR_LF_2},
-    sslwrapper::{get_receive, send_data},
     uri::Uri,
 };
+#[cfg(feature = "wasmedge_ssl")]
+use crete::sslwrapper::{get_receive, send_data};
 use std::{
     convert::TryFrom,
     fmt,
@@ -515,12 +516,16 @@ impl<'a> RequestBuilder<'a> {
             let deadline = Instant::now() + timeout;
             copy_with_timeout(stream, writer, deadline)?;
         } else {
-            let num_bytes = res.content_len().unwrap_or(0);
+            let num_bytes = res.content_len();
 
-            if num_bytes > 0 {
-                copy_exact(stream, writer, num_bytes - body_part.len())?;
-            } else {
-                io::copy(stream, writer)?;
+            match num_bytes {
+                Some(0) => {}
+                Some(num_bytes) => {
+                    copy_exact(stream, writer, num_bytes - body_part.len())?;
+                }
+                None => {
+                    io::copy(stream, writer)?;
+                }
             }
         }
 
@@ -910,14 +915,21 @@ impl<'a> Request<'a> {
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            let buf = &self.inner.parse_msg();
-            let body = String::from_utf8_lossy(buf);
-            send_data(host, port.into(), &body);
+            #[cfg(feature = "wasmedge_ssl")]
+            {
+                let buf = &self.inner.parse_msg();
+                let body = String::from_utf8_lossy(buf);
+                send_data(host, port.into(), &body);
 
-            let output = get_receive();
-            let tmp = String::from_utf8(output.rcv_vec).unwrap();
-            let res = Response::try_from(tmp.as_bytes(), writer).unwrap();
-            return Ok(res);
+                let output = get_receive();
+                let tmp = String::from_utf8(output.rcv_vec).unwrap();
+                let res = Response::try_from(tmp.as_bytes(), writer).unwrap();
+                return Ok(res);
+            }
+            #[cfg(not(feature = "wasmedge_ssl"))]
+            {
+                return Err(error::Error::Tls);
+            }
         } else {
             self.inner.send(&mut stream, writer)
         }
