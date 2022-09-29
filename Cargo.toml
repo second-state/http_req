@@ -1,6 +1,6 @@
 [package]
-name = "wasmedge_http_req"
-version = "0.9.0"
+name = "http_req_wasi"
+version = "0.10.0"
 license = "MIT"
 description = "HTTP client for the WasmEdge network socket API. Derived from the http_req library."
 repository = "https://github.com/second-state/wasmedge_http_req"
