@@ -5,7 +5,7 @@ use crate::{
     uri::Uri,
 };
 #[cfg(feature = "wasmedge_ssl")]
-use crete::sslwrapper::{get_receive, send_data};
+use crate::sslwrapper::{get_receive, send_data};
 use std::{
     convert::TryFrom,
     fmt,
