@@ -1,4 +1,4 @@
-# wasmedge_http_req
+# http_req_wasi
 
 Simple and lightweight HTTP client for the low level [wasmedge_wasi_socket](https://github.com/second-state/wasmedge_wasi_socket) library. It is to be compiled into WebAssembly bytecode targets and run on the [WasmEdge Runtime](https://github.com/WasmEdge/WasmEdge).
 
@@ -9,13 +9,15 @@ Simple and lightweight HTTP client for the low level [wasmedge_wasi_socket](http
 Basic GET request
 
 ```rust
-use wasmedge_http_req::request;
+use http_req_wasi::request;
 
 fn main() {
     let mut writer = Vec::new(); //container for body of a response
-    let res = request::get("http://127.0.0.1/", &mut writer).unwrap();
+    let res = request::get("http://eu.httpbin.org/get?msg=WasmEdge", &mut writer).unwrap();
 
     println!("Status: {} {}", res.status_code(), res.reason());
+    println!("Headers {}", res.headers());
+    println!("{}", String::from_utf8_lossy(&writer));
 }
 ```
 
@@ -23,27 +25,11 @@ fn main() {
 
 ```toml
 [dependencies]
-wasmedge_http_req  = "0.8.1"
+http_req_wasi  = "0.10.0"
 ```
 
 ## HTTPS support
-The HTTP and HTTPS APIs are the same. The Err messages are presented differently because the HTTP uses the rust code while the HTTPS request uses a wasmedge host function. 
 
-build the wasmedge
-```
-sudo apt-get install libssl-dev
-cmake -DCMAKE_BUILD_TYPE=Release -DWASMEDGE_BUILD_TESTS=OFF -DWASMEDGE_PLUGIN_HTTPSREQ=true  .. && make -j4
-```
+The HTTP and HTTPS APIs are the same. But you will need to get the [WasmEdge https_req plugin](https://github.com/WasmEdge/WasmEdge/actions/runs/3126746485) and unzip it into the `plugin` directory of your WasmEdge install.
 
-Basic HTTPS GET request
-
-```rust
-use wasmedge_http_req::request;
-
-fn main() {
-    let mut writer = Vec::new(); //container for body of a response
-    let res = request::get("https://127.0.0.1/", &mut writer).unwrap();
-
-    println!("Status: {} {}", res.status_code(), res.reason());
-}
-```
+See [examples here](examples).
