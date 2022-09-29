@@ -3,7 +3,7 @@ use http_req_wasi::{request::{Request, HttpVersion}, response::Headers, uri::Uri
 
 fn main() {
     let mut writer = Vec::new();
-    let uri = Uri::try_from("http://httpbin.org/get").unwrap();
+    let uri = Uri::try_from("http://eu.httpbin.org/get?msg=WasmEdge").unwrap();
     // let uri = Uri::try_from("https://httpbin.org/get").unwrap(); // uncomment the line for https request
 
     // add headers to the request

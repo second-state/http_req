@@ -7,5 +7,5 @@ fn main() {
 
     println!("Status: {} {}", res.status_code(), res.reason());
     println!("Headers {}", res.headers());
-    //println!("{}", String::from_utf8_lossy(&writer));  // uncomment this line to display the content of writer
+    println!("{}", String::from_utf8_lossy(&writer));
 }
