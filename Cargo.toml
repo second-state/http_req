@@ -12,7 +12,7 @@ edition = "2018"
 
 [dependencies]
 unicase = "^2.6"
-wasmedge_wasi_socket = "0.4.1"
+wasmedge_wasi_socket = "0.4.2"
 
 [features]
 default = ["wasmedge_ssl"]
