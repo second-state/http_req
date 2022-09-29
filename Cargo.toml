@@ -3,11 +3,11 @@ name = "http_req_wasi"
 version = "0.10.0"
 license = "MIT"
 description = "HTTP client for the WasmEdge network socket API. Derived from the http_req library."
-repository = "https://github.com/second-state/http_req_wasi"
+repository = "https://github.com/second-state/http_req"
 authors = ["chensiheng", "jayjamesjay"]
 readme = "README.md"
 categories = ["web-programming::http-client", "network-programming"]
-keywords = ["http", "client", "request", "wasmedge", "webassembly"]
+keywords = ["http", "https", "client", "wasmedge", "webassembly"]
 edition = "2018"
 
 [dependencies]
