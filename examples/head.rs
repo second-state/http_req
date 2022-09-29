@@ -1,4 +1,4 @@
-use wasmedge_http_req::request;
+use http_req_wasi::request;
 
 fn main() {
     let res = request::head("http://httpbin.org/head").unwrap();
