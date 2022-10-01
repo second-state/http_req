@@ -1,5 +1,5 @@
 use std::convert::TryFrom;
-use http_req_wasi::{request::{Request, HttpVersion}, response::Headers, uri::Uri};
+use http_req::{request::{Request, HttpVersion}, response::Headers, uri::Uri};
 
 fn main() {
     let mut writer = Vec::new();

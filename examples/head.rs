@@ -1,4 +1,4 @@
-use http_req_wasi::request;
+use http_req::request;
 
 fn main() {
     let res = request::head("http://eu.httpbin.org/headers").unwrap();

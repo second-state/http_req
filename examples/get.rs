@@ -1,4 +1,4 @@
-use http_req_wasi::request;
+use http_req::request;
 
 fn main() {
     let mut writer = Vec::new(); //container for body of a response
