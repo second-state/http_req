@@ -50,14 +50,29 @@ jobs:
       run: |
         cargo wasi build --release --no-default-features --example get
         wasmedge target/wasm32-wasi/release/examples/get.wasm
+        
+    - name: get https
+      run: |
+        cargo wasi build --release --no-default-features --example get_https
+        wasmedge target/wasm32-wasi/release/examples/get_https.wasm
 
     - name: head
       run: |
         cargo wasi build --release --no-default-features --example head
         wasmedge target/wasm32-wasi/release/examples/head.wasm
+        
+    - name: head https
+      run: |
+        cargo wasi build --release --no-default-features --example head_https
+        wasmedge target/wasm32-wasi/release/examples/head_https.wasm
 
     - name: post
       run: |
         cargo wasi build --release --no-default-features --example post
         wasmedge target/wasm32-wasi/release/examples/post.wasm
+        
+    - name: post https
+      run: |
+        cargo wasi build --release --no-default-features --example post_https
+        wasmedge target/wasm32-wasi/release/examples/post_https.wasm
      
