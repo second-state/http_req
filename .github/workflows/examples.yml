@@ -39,7 +39,7 @@ jobs:
       run : |
         wget https://github.com/WasmEdge/WasmEdge/releases/download/0.11.1/WasmEdge-plugin-wasmedge_httpsreq-0.11.1-ubuntu20.04_x86_64.tar.gz
         tar -xzf WasmEdge-plugin-wasmedge_httpsreq-0.11.1-ubuntu20.04_x86_64.tar.gz
-        sudo cp *.so /usr/local/plugin/
+        sudo cp *.so /usr/local/lib/wasmedge/
 
     - name: add_headers
       run: |
