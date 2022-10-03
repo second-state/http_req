@@ -33,13 +33,13 @@ jobs:
         
     - name: Install WasmEdge
       run: |
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -p /usr/local
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local
 
     - name: Install WasmEdge HTTPS REQ plugin
       run : |
         wget https://github.com/WasmEdge/WasmEdge/releases/download/0.11.1/WasmEdge-plugin-wasmedge_httpsreq-0.11.1-ubuntu20.04_x86_64.tar.gz
         tar -xzf WasmEdge-plugin-wasmedge_httpsreq-0.11.1-ubuntu20.04_x86_64.tar.gz
-        cp *.so /usr/local/plugin/
+        sudo cp *.so /usr/local/plugin/
 
     - name: add_headers
       run: |
