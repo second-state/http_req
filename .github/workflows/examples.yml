@@ -43,12 +43,12 @@ jobs:
 
     - name: add_headers
       run: |
-        cargo wasi build --release --example add_headers
+        cargo wasi build --release --no-default-features --example add_headers
         wasmedge target/wasm32-wasi/release/examples/add_headers.wasm
     
     - name: get
       run: |
-        cargo wasi build --release --example get
+        cargo wasi build --release --no-default-features --example get
         wasmedge target/wasm32-wasi/release/examples/get.wasm
         
     - name: get https
@@ -58,7 +58,7 @@ jobs:
 
     - name: head
       run: |
-        cargo wasi build --release --example head
+        cargo wasi build --release --no-default-features --example head
         wasmedge target/wasm32-wasi/release/examples/head.wasm
         
     - name: head https
@@ -68,7 +68,7 @@ jobs:
 
     - name: post
       run: |
-        cargo wasi build --release --example post
+        cargo wasi build --release --no-default-features --example post
         wasmedge target/wasm32-wasi/release/examples/post.wasm
         
     - name: post https
