@@ -1,5 +1,9 @@
+use http_req::{
+    request::{HttpVersion, Request},
+    response::Headers,
+    uri::Uri,
+};
 use std::convert::TryFrom;
-use http_req::{request::{Request, HttpVersion}, response::Headers, uri::Uri};
 
 fn main() {
     let mut writer = Vec::new();
@@ -12,8 +16,8 @@ fn main() {
     headers.insert("Accept-Language", "en-US");
     headers.insert("Host", "rust-lang.org");
     headers.insert("Connection", "Close");
-    
-    let mut response = Request::new(&uri)
+
+    Request::new(&uri)
         .headers(headers)
         .send(&mut writer)
         .unwrap();
@@ -21,10 +25,10 @@ fn main() {
     println!("{}", String::from_utf8_lossy(&writer));
 
     // set version
-    response = Request::new(&uri)
+    Request::new(&uri)
         .version(HttpVersion::Http10)
         .send(&mut writer)
         .unwrap();
-    
+
     println!("{}", String::from_utf8_lossy(&writer));
 }
