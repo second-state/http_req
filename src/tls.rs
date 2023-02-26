@@ -1,6 +1,10 @@
 //!secure connection over TLS
 
 use crate::error::Error as HttpError;
+
+#[cfg(feature = "wasmedge_rustls")]
+use std::io;
+#[cfg(not(feature = "wasmedge_rustls"))]
 use std::{
     fs::File,
     io::{self, BufReader},
@@ -13,7 +17,11 @@ use std::io::prelude::*;
 #[cfg(feature = "rust-tls")]
 use crate::error::ParseErr;
 
-#[cfg(not(any(feature = "native-tls", feature = "rust-tls")))]
+#[cfg(not(any(
+    feature = "native-tls",
+    feature = "rust-tls",
+    feature = "wasmedge_rustls"
+)))]
 compile_error!("one of the `native-tls` or `rust-tls` features must be enabled");
 
 ///wrapper around TLS Stream,
@@ -24,13 +32,15 @@ pub struct Conn<S: io::Read + io::Write> {
 
     #[cfg(feature = "rust-tls")]
     stream: rustls::StreamOwned<rustls::ClientSession, S>,
+    #[cfg(feature = "wasmedge_rustls")]
+    stream: wasmedge_rustls_api::stream::StreamOwned<wasmedge_rustls_api::TlsClientCodec, S>,
 }
 
 impl<S: io::Read + io::Write> io::Read for Conn<S> {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, io::Error> {
         let len = self.stream.read(buf);
 
-        #[cfg(feature = "rust-tls")]
+        #[cfg(any(feature = "rust-tls", feature = "wasmedge_rustls"))]
         {
             // TODO: this api returns ConnectionAborted with a "..CloseNotify.." string.
             // TODO: we should work out if self.stream.sess exposes enough information
@@ -64,6 +74,8 @@ pub struct Config {
     extra_root_certs: Vec<native_tls::Certificate>,
     #[cfg(feature = "rust-tls")]
     client_config: std::sync::Arc<rustls::ClientConfig>,
+    #[cfg(feature = "wasmedge_rustls")]
+    client_config: std::sync::Arc<wasmedge_rustls_api::ClientConfig>,
 }
 
 impl Default for Config {
@@ -83,6 +95,13 @@ impl Default for Config {
 
         Config {
             client_config: std::sync::Arc::new(config),
+        }
+    }
+
+    #[cfg(feature = "wasmedge_rustls")]
+    fn default() -> Self {
+        Config {
+            client_config: std::sync::Arc::new(Default::default()),
         }
     }
 }
@@ -148,6 +167,24 @@ impl Config {
             webpki::DNSNameRef::try_from_ascii_str(hostname.as_ref())
                 .map_err(|_| HttpError::Tls)?,
         );
+        let stream = StreamOwned::new(session, stream);
+
+        Ok(Conn { stream })
+    }
+
+    #[cfg(feature = "wasmedge_rustls")]
+    pub fn connect<H, S>(&self, hostname: H, stream: S) -> Result<Conn<S>, HttpError>
+    where
+        H: AsRef<str>,
+        S: io::Read + io::Write,
+    {
+        use wasmedge_rustls_api::stream::StreamOwned;
+
+        let session = self
+            .client_config
+            .new_codec(hostname)
+            .map_err(|_| HttpError::Tls)?;
+
         let stream = StreamOwned::new(session, stream);
 
         Ok(Conn { stream })

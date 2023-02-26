@@ -16,9 +16,8 @@
 pub mod error;
 pub mod request;
 pub mod response;
-#[cfg(feature = "wasmedge_ssl")]
-pub mod sslwrapper;
-// pub mod tls;
+#[cfg(feature = "wasmedge_rustls")]
+pub mod tls;
 pub mod uri;
 
 mod chunked;
