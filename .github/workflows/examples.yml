@@ -37,8 +37,7 @@ jobs:
 
     - name: Install WasmEdge HTTPS REQ plugin
       run : |
-        wget https://github.com/WasmEdge/WasmEdge/releases/download/0.11.2/WasmEdge-plugin-wasmedge_httpsreq-0.11.2-ubuntu20.04_x86_64.tar.gz
-        tar -xzf WasmEdge-plugin-wasmedge_httpsreq-*.tar.gz
+        wget https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-rustls-0.1.0-alpha-ubuntu20.04_x86_64.so
         sudo cp *.so /usr/local/lib/wasmedge/
 
     - name: add_headers
