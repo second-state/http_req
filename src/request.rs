@@ -478,7 +478,11 @@ impl<'a> RequestBuilder<'a> {
     ///    .send(&mut stream, &mut writer)
     ///    .unwrap();
     ///```
-    pub fn send<T, U>(&self, stream: &mut T, writer: &mut U) -> Result<Response, error::Error>
+    pub fn send_with_stream<T, U>(
+        &self,
+        stream: &mut T,
+        writer: &mut U,
+    ) -> Result<Response, error::Error>
     where
         T: Write + Read,
         U: Write,
@@ -530,6 +534,55 @@ impl<'a> RequestBuilder<'a> {
         }
 
         Ok(res)
+    }
+
+    ///Sends HTTP request.
+    ///
+    ///Creates `TcpStream` (and wraps it with `TlsStream` if needed). Writes request message
+    ///to created stream. Returns response for this request. Writes response's body to `writer`.
+    ///
+    ///# Examples
+    ///```
+    ///use http_req::{request::Request, uri::Uri};
+    ///use std::convert::TryFrom;
+    ///
+    ///let mut writer = Vec::new();
+    ///let uri: Uri = Uri::try_from("https://www.rust-lang.org/learn").unwrap();
+    ///
+    ///let response = RequestBuilder::new(&uri).send(&mut writer).unwrap();
+    ///```
+    pub fn send<T: Write>(&self, writer: &mut T) -> Result<Response, error::Error> {
+        let host = self
+            .uri
+            .host()
+            .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
+        let port = self.uri.corr_port();
+
+        #[cfg(target_arch = "wasm32")]
+        let mut stream = {
+            let mut addrs = nslookup(host, "").map_err(|e| error::Error::IO(e))?;
+            let mut addr = addrs
+                .pop()
+                .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
+            addr.set_port(port);
+            TcpStream::connect(&addr)?
+        };
+
+        #[cfg(not(target_arch = "wasm32"))]
+        let mut stream = TcpStream::connect((host, port))?;
+
+        if self.uri.scheme() == "https" {
+            #[cfg(feature = "wasmedge_ssl")]
+            {
+                self.send_wasmedge_https(host, port, writer)
+            }
+            #[cfg(not(feature = "wasmedge_ssl"))]
+            {
+                return Err(error::Error::Tls);
+            }
+        } else {
+            self.send_with_stream(&mut stream, writer)
+        }
     }
 
     #[cfg(feature = "wasmedge_ssl")]
@@ -983,7 +1036,7 @@ impl<'a> Request<'a> {
                 return Err(error::Error::Tls);
             }
         } else {
-            self.inner.send(&mut stream, writer)
+            self.inner.send_with_stream(&mut stream, writer)
         }
     }
 }
@@ -1187,7 +1240,7 @@ mod tests {
 
         RequestBuilder::new(&Uri::try_from(URI).unwrap())
             .header("Connection", "Close")
-            .send(&mut stream, &mut writer)
+            .send_with_stream(&mut stream, &mut writer)
             .unwrap();
     }
 
