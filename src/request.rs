@@ -478,11 +478,7 @@ impl<'a> RequestBuilder<'a> {
     ///    .send(&mut stream, &mut writer)
     ///    .unwrap();
     ///```
-    pub fn send_with_stream<T, U>(
-        &self,
-        stream: &mut T,
-        writer: &mut U,
-    ) -> Result<Response, error::Error>
+    pub fn send<T, U>(&self, stream: &mut T, writer: &mut U) -> Result<Response, error::Error>
     where
         T: Write + Read,
         U: Write,
@@ -549,9 +545,12 @@ impl<'a> RequestBuilder<'a> {
     ///let mut writer = Vec::new();
     ///let uri: Uri = Uri::try_from("https://www.rust-lang.org/learn").unwrap();
     ///
-    ///let response = RequestBuilder::new(&uri).send(&mut writer).unwrap();
+    ///let response = RequestBuilder::new(&uri).send_with_autoset_stream(&mut writer).unwrap();
     ///```
-    pub fn send<T: Write>(&self, writer: &mut T) -> Result<Response, error::Error> {
+    pub fn send_with_autoset_stream<T: Write>(
+        &self,
+        writer: &mut T,
+    ) -> Result<Response, error::Error> {
         let host = self
             .uri
             .host()
@@ -581,7 +580,7 @@ impl<'a> RequestBuilder<'a> {
                 return Err(error::Error::Tls);
             }
         } else {
-            self.send_with_stream(&mut stream, writer)
+            self.send(&mut stream, writer)
         }
     }
 
@@ -1036,7 +1035,7 @@ impl<'a> Request<'a> {
                 return Err(error::Error::Tls);
             }
         } else {
-            self.inner.send_with_stream(&mut stream, writer)
+            self.inner.send(&mut stream, writer)
         }
     }
 }
@@ -1240,7 +1239,7 @@ mod tests {
 
         RequestBuilder::new(&Uri::try_from(URI).unwrap())
             .header("Connection", "Close")
-            .send_with_stream(&mut stream, &mut writer)
+            .send(&mut stream, &mut writer)
             .unwrap();
     }
 
