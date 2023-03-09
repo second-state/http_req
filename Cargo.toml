@@ -1,6 +1,6 @@
 [package]
 name = "http_req_wasi"
-version = "0.10.2"
+version = "0.10.3"
 license = "MIT"
 description = "HTTP client for the WasmEdge network socket API. Derived from the http_req library."
 repository = "https://github.com/second-state/http_req"
@@ -17,7 +17,8 @@ path = "src/lib.rs"
 [dependencies]
 unicase = "^2.6"
 wasmedge_wasi_socket = "0.4.2"
+wasmedge_rustls_api = { version = "0.1.0", optional = true }
 
 [features]
-default = ["wasmedge_ssl"]
-wasmedge_ssl = []
+default = ["wasmedge_rustls"]
+wasmedge_rustls = ["wasmedge_rustls_api"]

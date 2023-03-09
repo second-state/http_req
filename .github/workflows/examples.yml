@@ -35,50 +35,50 @@ jobs:
       run: |
         curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | sudo bash -s -- -p /usr/local
 
-    - name: Install WasmEdge HTTPS REQ plugin
+    - name: Install WasmEdge Rustls plugin
       run : |
-        wget https://github.com/WasmEdge/WasmEdge/releases/download/0.11.2/WasmEdge-plugin-wasmedge_httpsreq-0.11.2-ubuntu20.04_x86_64.tar.gz
-        tar -xzf WasmEdge-plugin-wasmedge_httpsreq-*.tar.gz
+        wget https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar
+        tar -xf WasmEdge-plugin-wasmedge_rustls-*.tar
         sudo cp *.so /usr/local/lib/wasmedge/
 
     - name: add_headers
       run: |
         cargo build --release --example add_headers
         wasmedgec target/wasm32-wasi/release/examples/add_headers.wasm add_headers.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge add_headers.wasm
+        wasmedge add_headers.wasm
     
     - name: get
       run: |
         cargo build --release --example get
         wasmedgec target/wasm32-wasi/release/examples/get.wasm get.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge get.wasm
+        wasmedge get.wasm
         
     - name: get https
       run: |
         cargo wasi build --release --example get_https
         wasmedgec target/wasm32-wasi/release/examples/get_https.wasm get_https.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge get_https.wasm
+        wasmedge get_https.wasm
 
     - name: head
       run: |
         cargo build --release --example head
         wasmedgec target/wasm32-wasi/release/examples/head.wasm head.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge head.wasm
+        wasmedge head.wasm
         
     - name: head https
       run: |
         cargo build --release --example head_https
         wasmedgec target/wasm32-wasi/release/examples/head_https.wasm head_https.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge head_https.wasm
+        wasmedge head_https.wasm
 
     - name: post
       run: |
         cargo build --release --example post
         wasmedgec target/wasm32-wasi/release/examples/post.wasm post.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge post.wasm
+        wasmedge post.wasm
         
     - name: post https
       run: |
         cargo build --release --example post_https
         wasmedgec target/wasm32-wasi/release/examples/post_https.wasm post_https.wasm
-        WASMEDGE_PLUGIN_PATH=/usr/local/lib/wasmedge/ wasmedge post_https.wasm
+        wasmedge post_https.wasm
