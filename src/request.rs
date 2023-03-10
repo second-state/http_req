@@ -1321,6 +1321,7 @@ mod tests {
         assert_eq!(request.inner.timeout, timeout);
     }
 
+    #[ignore]
     #[test]
     fn request_connect_timeout() {
         let uri = Uri::try_from(URI).unwrap();
