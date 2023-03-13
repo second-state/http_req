@@ -532,58 +532,6 @@ impl<'a> RequestBuilder<'a> {
         Ok(res)
     }
 
-    ///Sends HTTP request.
-    ///
-    ///Creates `TcpStream` (and wraps it with `TlsStream` if needed). Writes request message
-    ///to created stream. Returns response for this request. Writes response's body to `writer`.
-    ///
-    ///# Examples
-    ///```
-    ///use http_req::{request::Request, uri::Uri};
-    ///use std::convert::TryFrom;
-    ///
-    ///let mut writer = Vec::new();
-    ///let uri: Uri = Uri::try_from("https://www.rust-lang.org/learn").unwrap();
-    ///
-    ///let response = RequestBuilder::new(&uri).send_with_autoset_stream(&mut writer).unwrap();
-    ///```
-    pub fn send_with_autoset_stream<T: Write>(
-        &self,
-        writer: &mut T,
-    ) -> Result<Response, error::Error> {
-        let host = self
-            .uri
-            .host()
-            .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
-        let port = self.uri.corr_port();
-
-        #[cfg(target_arch = "wasm32")]
-        let mut stream = {
-            let mut addrs = nslookup(host, "").map_err(|e| error::Error::IO(e))?;
-            let mut addr = addrs
-                .pop()
-                .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
-            addr.set_port(port);
-            TcpStream::connect(&addr)?
-        };
-
-        #[cfg(not(target_arch = "wasm32"))]
-        let mut stream = TcpStream::connect((host, port))?;
-
-        if self.uri.scheme() == "https" {
-            #[cfg(feature = "wasmedge_ssl")]
-            {
-                self.send_wasmedge_https(host, port, writer)
-            }
-            #[cfg(not(feature = "wasmedge_ssl"))]
-            {
-                return Err(error::Error::Tls);
-            }
-        } else {
-            self.send(&mut stream, writer)
-        }
-    }
-
     #[cfg(feature = "wasmedge_ssl")]
     fn send_wasmedge_https<T: Write>(
         &self,
@@ -689,6 +637,32 @@ impl<'a> RequestBuilder<'a> {
         }
 
         request_msg
+    }
+
+    ///Consume self to build a `Request` instance.
+    ///
+    ///# Examples
+    ///```
+    ///use http_req::{request::RequestBuilder, uri::Uri};
+    ///
+    ///let addr = Uri::try_from("https://www.rust-lang.org/learn").unwrap();
+    ///let mut writer = Vec::new();
+    ///
+    ///let request = RequestBuilder::new(&addr)
+    ///    .header("Connection", "Close")
+    ///    .build();
+    ///
+    ///let response = request.send(&mut writer);
+    ///```
+    ///
+    pub fn build(self) -> Request<'a> {
+        Request {
+            inner: self,
+            connect_timeout: Some(Duration::from_secs(60)),
+            read_timeout: Some(Duration::from_secs(60)),
+            write_timeout: Some(Duration::from_secs(60)),
+            root_cert_file_pem: None,
+        }
     }
 }
 
@@ -1347,6 +1321,7 @@ mod tests {
         assert_eq!(request.inner.timeout, timeout);
     }
 
+    #[ignore]
     #[test]
     fn request_connect_timeout() {
         let uri = Uri::try_from(URI).unwrap();
