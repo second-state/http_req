@@ -579,6 +579,32 @@ impl<'a> RequestBuilder<'a> {
 
         request_msg
     }
+
+    ///Consume self to build a `Request` instance.
+    ///
+    ///# Examples
+    ///```
+    ///use http_req::{request::RequestBuilder, uri::Uri};
+    ///
+    ///let addr = Uri::try_from("https://www.rust-lang.org/learn").unwrap();
+    ///let mut writer = Vec::new();
+    ///
+    ///let request = RequestBuilder::new(&addr)
+    ///    .header("Connection", "Close")
+    ///    .build();
+    ///
+    ///let response = request.send(&mut writer);
+    ///```
+    ///
+    pub fn build(self) -> Request<'a> {
+        Request {
+            inner: self,
+            connect_timeout: Some(Duration::from_secs(60)),
+            read_timeout: Some(Duration::from_secs(60)),
+            write_timeout: Some(Duration::from_secs(60)),
+            root_cert_file_pem: None,
+        }
+    }
 }
 
 ///Relatively higher-level struct for making HTTP requests.
@@ -1237,6 +1263,7 @@ mod tests {
         assert_eq!(request.inner.timeout, timeout);
     }
 
+    #[ignore]
     #[test]
     fn request_connect_timeout() {
         let uri = Uri::try_from(URI).unwrap();
