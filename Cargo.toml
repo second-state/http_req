@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 unicase = "^2.6"
-wasmedge_wasi_socket = "0.4.2"
+wasmedge_wasi_socket = "0.5.0"
 wasmedge_rustls_api = { version = "0.1.0", optional = true }
 
 [features]
