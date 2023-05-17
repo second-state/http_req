@@ -39,6 +39,7 @@ jobs:
       run : |
         wget https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar
         tar -xf WasmEdge-plugin-wasmedge_rustls-*.tar
+        sudo mkdir -p /usr/local/lib/wasmedge/
         sudo cp *.so /usr/local/lib/wasmedge/
 
     - name: add_headers
