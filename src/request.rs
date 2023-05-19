@@ -1,6 +1,6 @@
 //! creating and sending HTTP requests
-#[cfg(feature = "wasmedge_ssl")]
-use crate::sslwrapper::{get_receive, send_data};
+#[cfg(feature = "wasmedge_rustls")]
+use crate::tls;
 use crate::{
     error,
     response::{find_slice, Headers, Response, CR_LF_2},
@@ -532,65 +532,6 @@ impl<'a> RequestBuilder<'a> {
         Ok(res)
     }
 
-    #[cfg(feature = "wasmedge_ssl")]
-    fn send_wasmedge_https<T: Write>(
-        &self,
-        host: &str,
-        port: u16,
-        writer: &mut T,
-    ) -> Result<Response, error::Error> {
-        let buf = &self.parse_msg();
-        let body = String::from_utf8_lossy(buf);
-        send_data(host, port.into(), &body);
-        let output = get_receive();
-        let deadline = match self.timeout {
-            Some(t) => Instant::now() + t,
-            None => Instant::now() + Duration::from_secs(360),
-        };
-        let mut stream = std::io::Cursor::new(output.rcv_vec);
-        let (res, body_part) = self.read_head(&mut stream, deadline)?;
-
-        if self.method == Method::HEAD {
-            return Ok(res);
-        }
-
-        if let Some(v) = res.headers().get("Transfer-Encoding") {
-            if *v == "chunked" {
-                let mut dechunked = crate::chunked::Reader::new(body_part.as_slice().chain(stream));
-
-                if let Some(timeout) = self.timeout {
-                    let deadline = Instant::now() + timeout;
-                    copy_with_timeout(&mut dechunked, writer, deadline)?;
-                } else {
-                    io::copy(&mut dechunked, writer)?;
-                }
-
-                return Ok(res);
-            }
-        }
-
-        writer.write_all(&body_part)?;
-
-        if let Some(timeout) = self.timeout {
-            let deadline = Instant::now() + timeout;
-            copy_with_timeout(&mut stream, writer, deadline)?;
-        } else {
-            let num_bytes = res.content_len();
-
-            match num_bytes {
-                Some(0) => {}
-                Some(num_bytes) => {
-                    copy_exact(&mut stream, writer, num_bytes - body_part.len())?;
-                }
-                None => {
-                    io::copy(&mut stream, writer)?;
-                }
-            }
-        }
-
-        Ok(res)
-    }
-
     ///Writes message to `stream` and flushes it
     pub fn write_msg<T, U>(&self, stream: &mut T, msg: &U) -> Result<(), io::Error>
     where
@@ -1000,14 +941,15 @@ impl<'a> Request<'a> {
         let mut stream = TcpStream::connect((host, port))?;
 
         if self.inner.uri.scheme() == "https" {
-            #[cfg(feature = "wasmedge_ssl")]
+            #[cfg(feature = "wasmedge_rustls")]
             {
-                self.inner.send_wasmedge_https(host, port, writer)
+                let cnf = tls::Config::default();
+                let mut stream = cnf.connect(host, stream)?;
+                self.inner.send(&mut stream, writer)
             }
-            #[cfg(not(feature = "wasmedge_ssl"))]
-            {
-                return Err(error::Error::Tls);
-            }
+
+            #[cfg(not(feature = "wasmedge_rustls"))]
+            return Err(error::Error::Tls);
         } else {
             self.inner.send(&mut stream, writer)
         }
