@@ -17,7 +17,7 @@ use std::{
 #[cfg(not(target_arch = "wasm32"))]
 use std::net::TcpStream;
 #[cfg(target_arch = "wasm32")]
-use wasmedge_wasi_socket::{nslookup, TcpStream};
+use wasmedge_wasi_socket::{TcpStream, ToSocketAddrs};
 
 const CR_LF: &str = "\r\n";
 const BUF_SIZE: usize = 8 * 1024;
@@ -929,11 +929,10 @@ impl<'a> Request<'a> {
 
         #[cfg(target_arch = "wasm32")]
         let mut stream = {
-            let mut addrs = nslookup(host, "").map_err(|e| error::Error::IO(e))?;
-            let mut addr = addrs
-                .pop()
+            let mut addrs = (host, port).to_socket_addrs()?;
+            let addr = addrs
+                .next()
                 .ok_or(error::Error::Parse(error::ParseErr::UriErr))?;
-            addr.set_port(port);
             TcpStream::connect(&addr)?
         };
 
