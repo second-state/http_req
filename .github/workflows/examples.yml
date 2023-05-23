@@ -83,3 +83,9 @@ jobs:
         cargo build --release --example post_https
         wasmedgec target/wasm32-wasi/release/examples/post_https.wasm post_https.wasm
         wasmedge post_https.wasm
+
+    - name: post by ip
+      run: |
+        cargo build --release --example post_by_ip
+        wasmedgec target/wasm32-wasi/release/examples/post_by_ip.wasm post_by_ip.wasm
+        wasmedge post_by_ip.wasm
